@@ -89,7 +89,8 @@ module Puppet::Util::Queue
     # the default queue type to use, and fails over to +queue_type_default+ if the configuration
     # information is not present.
     def client_class
-        Puppet::Util::Queue.queue_type_to_class(Puppet[:queue_client] || queue_type_default)
+         Puppet::Util::Queue.queue_type_to_class(Puppet[:queue_client] || queue_type_default)
+        # Puppet::Util::Queue.queue_type_to_class(Puppet[:queue_client] || :stomp)
     end
 
     # Returns (instantiating as necessary) the singleton queue client instance, according to the

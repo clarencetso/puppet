@@ -4,7 +4,7 @@ class Puppet::Node::StoreConfig
     attr_accessor :node, :resources
 
     extend Puppet::Indirector
-    indirects :store_config, :terminus_class => :active_record
+    indirects :store_config, :terminus_class =>  :active_record
 
     def initialize(node, catalog)
         self.node = node
@@ -20,5 +20,8 @@ class Puppet::Node::StoreConfig
         self.node.name
     end
 
+    def to_host
+        Puppet::Rails::Host.find_or_create_by_name(self.node.name)
+    end
     private :resources=
 end

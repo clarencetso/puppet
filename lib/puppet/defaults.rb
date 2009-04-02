@@ -49,6 +49,8 @@ module Puppet
     end
 
     self.setdefaults(:main,
+        :queue_type => ["stomp","Default queuing client is stomp"],
+        :queue_source => ["stomp://localhost:61613","Connection information for the queue"],
         :trace => [false, "Whether to print stack traces on some errors"],
         :autoflush => [false, "Whether log files should always flush to disk."],
         :syslogfacility => ["daemon", "What syslog facility to use when logging to
@@ -663,6 +665,12 @@ module Puppet
             "Whether to store each client's configuration.  This
              requires ActiveRecord from Ruby on Rails."]
     )
+
+    setdefaults(:main,
+        :queue_client => ["stomp",
+            "The protocol used to queue storeconfig."]
+    )
+
 
     # This doesn't actually work right now.
     setdefaults(:parser,
