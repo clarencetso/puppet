@@ -3,6 +3,7 @@
 
 require 'puppet/node'
 require 'puppet/node/catalog'
+require 'puppet/node/store_config'
 require 'puppet/util/errors'
 
 # Maintain a graph of scopes, along with a bunch of data
@@ -425,18 +426,7 @@ class Puppet::Parser::Compiler
 
     # Store the catalog into the database.
     def store
-        unless Puppet.features.rails?
-            raise Puppet::Error,
-                "storeconfigs is enabled but rails is unavailable"
-        end
-
-        unless ActiveRecord::Base.connected?
-            Puppet::Rails.connect
-        end
-
-        # We used to have hooks here for forking and saving, but I don't
-        # think it's worth retaining at this point.
-        store_to_active_record(@node, @catalog.vertices)
+	Puppet::Node::StoreConfig.new(@node,@catalog.to_catalog).save
     end
 
     # Do the actual storage.

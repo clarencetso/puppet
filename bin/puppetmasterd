@@ -81,8 +81,10 @@ end
 
 require 'getoptlong'
 require 'puppet'
+require 'puppet/node/store_config'
 require 'puppet/network/handler'
 require 'puppet/sslcertificates'
+
 
 options = [
 	[ "--debug",	"-d",			GetoptLong::NO_ARGUMENT ],
@@ -160,6 +162,7 @@ rescue GetoptLong::InvalidOption => detail
     #$stderr.puts detail
     exit(1)
 end
+
 
 # Now parse the config
 Puppet.parse_config
@@ -278,6 +281,9 @@ Puppet.settraps
 if Puppet[:daemonize]
     server.daemonize
 end
+
+# Set up default terminus for storeconfig
+Puppet::Node::StoreConfig.terminus_class = :queue
 
 Puppet.notice "Starting Puppet server version %s" % [Puppet.version]
 case Puppet[:servertype]

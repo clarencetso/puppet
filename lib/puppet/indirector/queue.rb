@@ -24,9 +24,15 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
     # Place the request on the queue
     def save(request)
         begin
-            client.send(queue, to_message(request))
+	    # FIX ME - check for instance type. Assuming storeconfig.
+
+	    # host = request.instance.to_host
+            # client.send("storeconfig", to_message(host))
+            # client.send("storeconfig", to_message(request.instance))
+            msg = CGI.escape(Marshal.dump(request.instance.extract))
+            client.send("storeconfig",msg)
         rescue => detail
-            raise Puppet::Error, "Could not write %s to queue: %s" % [request.key, detail]
+            raise Puppet::Error, "Could not write %s to queue: %s\nInstance::%s\n" % [request.key, detail,request.instance.to_s]
         end
     end
 
@@ -41,20 +47,21 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
 
     # Formats the model instance associated with _request_ appropriately for message delivery.
     # Uses YAML serialization.
-    def to_message(request)
-        YAML.dump(request.instance)
+    def to_message(obj)
+        Marshal.dump(obj)
     end
 
     # converts the _message_ from deserialized format to an actual model instance.
     def from_message(message)
-        YAML.load(message)
+        # YAML.load(message)
+        Marshal.restore(message.body)
     end
 
     # Provides queue subscription functionality; for a given indirection, use this method on the terminus
     # to subscribe to the indirection-specific queue.  Your _block_ will be executed per new indirection
     # model received from the queue, with _obj_ being the model instance.
     def subscribe
-        client.subscribe(queue) do |msg|
+        client.subscribe('storeconfig') do |msg|
             begin
                 yield(from_message(msg))
             rescue => detail
