@@ -542,6 +542,14 @@ describe Puppet::Node::Catalog do
         @transaction.stubs(:addtimes)
     end
 
+    it "should be able to be serialized" do
+        trans = Puppet::TransObject.new("foo", "bar")
+        trans["param"] = "value"
+        @catalog.add_resource trans
+
+        lambda { Marshal.dump(@catalog) }.should_not raise_error
+    end
+
     describe Puppet::Node::Catalog, " when applying" do
 
         it "should create and evaluate a transaction" do
