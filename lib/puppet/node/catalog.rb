@@ -497,7 +497,11 @@ class Puppet::Node::Catalog < Puppet::PGraph
                 resource.catalog = result
             end
 
-            newres = resource.send(convert)
+            if convert == :to_transobject and resource.is_a?(Puppet::TransObject)
+                newres = resource
+            else
+                newres = resource.send(convert)
+            end
 
             # We can't guarantee that resources don't munge their names
             # (like files do with trailing slashes), so we have to keep track
