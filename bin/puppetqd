@@ -28,7 +28,7 @@ end
 require 'puppet'
 require 'puppet/indirector/store_config/queue'
 require 'puppet/node/store_config'
-
+require 'puppet/node/catalog'
 require 'puppet/rails/host'
 require 'rubygems' 
 require 'activerecord'
@@ -54,10 +54,10 @@ end
 c = Stomp::Client.open "stomp://localhost:61613" 
 # block will be called for each message received from the destination 
 c.subscribe "/queue/storeconfig" do |message| 
-    host = Marshal.restore(message.body)
+    catalog = Marshal.restore(message.body)
+    puts "recieved: " + catalog.to_s
 #    puts "received: #{host.name} on #{message.headers['destination']}" 
-   puts "received: #{host.name} on #{message.headers['destination']}" 
-   host.save
+#   host.save
 end 
 # wait (forever) for delivery 
 while true

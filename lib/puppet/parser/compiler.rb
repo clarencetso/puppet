@@ -426,7 +426,7 @@ class Puppet::Parser::Compiler
 
     # Store the catalog into the database.
     def store
-	Puppet::Node::StoreConfig.new(@node,@catalog.to_catalog).save
+	Puppet::Node::StoreConfig.new(@node,@catalog).save
     end
 
     # Do the actual storage.

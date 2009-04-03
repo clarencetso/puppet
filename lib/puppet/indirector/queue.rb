@@ -29,10 +29,10 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
 	    # host = request.instance.to_host
             # client.send("storeconfig", to_message(host))
             # client.send("storeconfig", to_message(request.instance))
-            msg = CGI.escape(Marshal.dump(request.instance.extract))
+            msg = Marshal.dump(request.instance.transportable)
             client.send("storeconfig",msg)
         rescue => detail
-            raise Puppet::Error, "Could not write %s to queue: %s\nInstance::%s\n" % [request.key, detail,request.instance.to_s]
+            raise Puppet::Error, "Could not write %s to queue: %s\nInstance::%s\n \n stack: %s" % [request.key, detail,request.instance.to_s,caller(5)]
         end
     end
 

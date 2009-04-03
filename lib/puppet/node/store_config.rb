@@ -1,7 +1,7 @@
 require 'puppet/indirector'
 
 class Puppet::Node::StoreConfig
-    attr_accessor :node, :resources
+    attr_accessor :node, :resources, :transportable
 
     extend Puppet::Indirector
     indirects :store_config, :terminus_class =>  :active_record
@@ -9,6 +9,7 @@ class Puppet::Node::StoreConfig
     def initialize(node, catalog)
         self.node = node
         self.catalog = catalog
+        self.transportable = catalog.to_transportable
     end
 
     def catalog=(cat)
