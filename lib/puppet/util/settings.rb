@@ -19,27 +19,7 @@ class Puppet::Util::Settings
 
     # Set a config value.  This doesn't set the defaults, it sets the value itself.
     def []=(param, value)
-        param = symbolize(param)
-        unless element = @config[param]
-            raise ArgumentError,
-                "Attempt to assign a value to unknown configuration parameter %s" % param.inspect
-        end
-        if element.respond_to?(:munge)
-            value = element.munge(value)
-        end
-        if element.respond_to?(:handle)
-            element.handle(value)
-        end
-        # Reset the name, so it's looked up again.
-        if param == :name
-            @name = nil
-        end
-        @sync.synchronize do # yay, thread-safe
-            @values[:memory][param] = value
-            @cache.clear
-        end
-
-        return value
+        set_value(param, value, :memory)
     end
 
     # Generate the list of valid arguments, in a format that GetoptLong can
@@ -158,7 +138,7 @@ class Puppet::Util::Settings
     end
 
     # Handle a command-line argument.
-    def handlearg(opt, value = nil)
+    def handlearg(opt, value)
         @cache.clear
         value = munge_value(value) if value
         str = opt.sub(/^--/,'')
@@ -169,17 +149,12 @@ class Puppet::Util::Settings
             bool = false
         end
         str = str.intern
-        if self.valid?(str)
-            @sync.synchronize do
-                if self.boolean?(str)
-                    @values[:cli][str] = bool
-                else
-                    @values[:cli][str] = value
-                end
-            end
-        else
-            raise ArgumentError, "Invalid argument %s" % opt
+
+        if value == ""
+            value = bool
         end
+
+        set_value(str, value, :cli)
     end
 
     def include?(name)
@@ -591,6 +566,32 @@ class Puppet::Util::Settings
 
         return bucket
     end
+
+    def set_value(param, value, type)
+        param = symbolize(param)
+        unless element = @config[param]
+            raise ArgumentError,
+                "Attempt to assign a value to unknown configuration parameter %s" % param.inspect
+        end
+        if element.respond_to?(:munge)
+            value = element.munge(value)
+        end
+        if element.respond_to?(:handle)
+            element.handle(value)
+        end
+        # Reset the name, so it's looked up again.
+        if param == :name
+            @name = nil
+        end
+        @sync.synchronize do # yay, thread-safe
+            @values[type][param] = value
+            @cache.clear
+        end
+
+        return value
+    end
+
+    private :set_value
 
     # Set a bunch of defaults in a given section.  The sections are actually pretty
     # pointless, but they help break things up a bit, anyway.
