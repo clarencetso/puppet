@@ -42,7 +42,7 @@ describe Puppet::Node::Facts::ActiveRecord do
             @terminus.find(@request).should be_nil
         end
 
-        it "should return convert the node's parameters into a Facts instance if a host instance is found" do
+        it "should convert the node's parameters into a Facts instance if a host instance is found" do
             host = stub 'host', :name => "foo"
             host.expects(:get_facts_hash).returns("one" => [mock("two_value", :value => "two")], "three" => [mock("three_value", :value => "four")])
 
