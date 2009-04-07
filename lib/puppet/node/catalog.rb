@@ -1,3 +1,4 @@
+require 'puppet/node'
 require 'puppet/indirector'
 require 'puppet/pgraph'
 require 'puppet/transaction'

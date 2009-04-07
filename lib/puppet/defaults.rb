@@ -659,9 +659,20 @@ module Puppet
     )
 
     setdefaults(:puppetmasterd,
-        :storeconfigs => [false,
-            "Whether to store each client's configuration.  This
-             requires ActiveRecord from Ruby on Rails."]
+        :storeconfigs => {:default => false, :desc => "Whether to store each client's configuration.  This
+            requires ActiveRecord from Ruby on Rails.",
+            :call_on_define => true, # Call our hook with the default value, so we always get the libdir set.
+            :hook => proc do |value|
+                require 'puppet/node'
+                require 'puppet/node/facts'
+                require 'puppet/node/catalog'
+                if value
+                    Puppet::Node::Catalog.cache_class = :active_record
+                    Puppet::Node::Facts.cache_class = :active_record
+                    Puppet::Node.cache_class = :active_record
+                end
+            end
+        }
     )
 
     # This doesn't actually work right now.
