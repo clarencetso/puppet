@@ -432,16 +432,18 @@ class Puppet::Node::Catalog < Puppet::PGraph
         }
     end
 
-    # LAK:NOTE We cannot yaml-dump the class in the edgelist_class, because classes cannot be
-    # dumped by default, nor does yaml-dumping # the edge-labels work at this point (I don't
-    # know why).
-    #  Neither of these matters right now, but I suppose it could at some point.
-    # We also have to have the vertex_dict dumped after the resource table, because yaml can't
-    # seem to handle the output of yaml-dumping the vertex_dict.
     def to_yaml_properties
-        props = instance_variables.reject { |v| %w{@edgelist_class @edge_labels @vertex_dict}.include?(v) }
-        props << "@vertex_dict"
-        props
+        result = instance_variables
+
+        # There's a ruby bug that hits us without this:
+        # http://rubyforge.org/tracker/?group_id=426&atid=1698&func=detail&aid=8886
+        # We need our resources to show up in as values in a hash
+        # before they show up as keys, because otherwise
+        # the loading fails.
+        result.delete "@resource_table"
+        result.unshift "@resource_table"
+
+        result
     end
 
     private
