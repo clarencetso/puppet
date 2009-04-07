@@ -1,8 +1,8 @@
 *PUPPET QUEUEING
 
 Puppet Queueing is a feature which is designed to take some load
-off of the PuppetMaster by transfering the task of updating the
-database to a seperate program which is named puppetqd (Puppet
+off of the PuppetMaster by transferring the task of updating the
+database to a separate program which is named puppetqd (Puppet
 Queue Daemon).
 
 Currently this is only supported for "Storeconfigs" which is
@@ -34,7 +34,7 @@ the Stomp API. For details refer to:
 
 Both puppetmasterd and puppetqd subscribe to the same queueing service
 using the stomp interface. As puppetmasterd posts data to the queue,
-puppetqd recieves it and stores it. The details of how to connect to
+puppetqd receives it and stores it. The details of how to connect to
 the service and the name of the queue to use are set in puppet.conf:
 
   <tbd this is a guess>
@@ -42,7 +42,7 @@ the service and the name of the queue to use are set in puppet.conf:
     queue_interface = stomp  
     queue_default = storeconfigs
     queue_connect = stomp://localhost:63632
-    ... storeconfiigs info like dblocation, etc. ...
+    ... storeconfigs info like dblocation, etc. ...
   [puppetmaster]
     storeconfigs_use_queue = true
   </tbd>
@@ -53,7 +53,7 @@ database as defined in the STORECONFIGS setup.
 
 *QUEUEING SERVICES 
 
-As mentioned previously any queueing service that suppoprts the Stomp
+As mentioned previously any queueing service that supports the Stomp
 protocol can be used. Which one you use depends on your needs. We have
 tested with two of the most popular services - StompServer and ActiveMQ.
 
@@ -71,7 +71,7 @@ on but we encountered some problems when using it from multiple machines.
 	http://activemq.apache.org
 
 Considered by many to be the most popular message service in use today,
-ActiveMQ has hundreds of features for scaling, persistance and so on. 
+ActiveMQ has hundreds of features for scaling, persistence and so on.
 
 Although installation is fairly simple, the configuration can seem quite
 intimidating, but for our use a one line change to the  standard configuration
@@ -85,7 +85,7 @@ will give you enough info to decide.
 
 Others
 
-We have looked at but not tried some other queing services which are
+We have looked at but not tried some other queuing services which are
 compatible with the Stomp API:
 
 + POE Component Message Queue
@@ -107,7 +107,7 @@ machine means that they are all competing for the same CPU cycles. Bumping
 up the power of the server they are running on may be enough to handle
 even fairly large deployments. 
 
-Hoeever since most queueing services (even StompServer) are designed to
+However since most queueing services (even StompServer) are designed to
 deliver messages from a "queue" to whoever asks for the next message you
 can split things up between machines:
 
@@ -122,6 +122,6 @@ which machines or services it goes through.
 
 Although for StoreConfigs absolute reliability is not a requirement as
 a new catalog will be sent the next time a node connects, some amount
-of persistance should some process crash may be desirable. Both ActiveMQ
+of persistence should some process crash may be desirable. Both ActiveMQ
 and MySQL (and other databases) have these kind of features built in 
 which can be activated as needed. 
