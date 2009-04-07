@@ -19,13 +19,14 @@ In a nutshell:
 
   puppetmasterd -> stomp -> service -> stomp -> puppetqd -> database
 
-At the moment the only queueing interface supported is "stomp". Although
-others could be implemented, stomp is built into Ruby and considered the
-default queueing mechanism for Ruby and Rails applications.
+At the moment the only messaging protocol supported is "stomp". Although
+others could be implemented, and considered by many as the
+default queueing mechanism for Ruby and Rails applications. It is
+distributed as a Ruby gem and is easily installed.
 
 (The queueing code inside Puppet has been written so that when other 
-interfaces are implemented they will be easy to use by changing settings
-in puppet.conf).
+interfaces  and protocols are implemented they will be easy to use by 
+changing settings in puppet.conf).
 
 The "service" in the diagram above is any queueing service that supports
 the Stomp API. For details refer to:
@@ -111,9 +112,9 @@ However since most queueing services (even StompServer) are designed to
 deliver messages from a "queue" to whoever asks for the next message you
 can split things up between machines:
 
-  puppetmaster1 --\             /-- puppetqd1-> mysql1 -\
-  puppetmaster2 ----> ActiveMQ ---> puppetqd2-> mysql2 ---> database
-  puppetmaster3 --/             \-- puppetqd3-> mysql3 -/
+  puppetmaster1 --\             /-- puppetqd1 -\
+  puppetmaster2 ----> ActiveMQ ---> puppetqd2 ---> database
+  puppetmaster3 --/             \-- puppetqd33 -/
                                  \- puppetqd4-/
 
 This is, of course a totally contrived example, but it gets the point
