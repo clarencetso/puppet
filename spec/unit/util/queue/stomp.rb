@@ -3,7 +3,6 @@
 require File.dirname(__FILE__) + '/../../../spec_helper'
 require 'puppet/util/queue'
 
-
 def Puppet.[](*any)
     'faux_queue_source'
 end
@@ -17,6 +16,7 @@ end
 describe 'Puppet::Util::Queue::Stomp' do
     before :all do
         class Stomp::Client
+            include Mocha::Standalone
             attr_accessor :queue_source
 
             def send(q, m)
@@ -24,7 +24,7 @@ describe 'Puppet::Util::Queue::Stomp' do
             end
 
             def subscribe(q)
-                'subscribe: %s' % q
+                yield(stub(:body => 'subscribe: %s' % q))
             end
 
             def initialize(s)
@@ -49,7 +49,7 @@ describe 'Puppet::Util::Queue::Stomp' do
     it 'should transform the queue name properly and pass along to superclass for send and subscribe' do
         o = Puppet::Util::Queue::Stomp.new
         o.send('fooqueue', 'Smite!').should == 'To /queue/fooqueue: Smite!'
-        o.subscribe('moodew').should == 'subscribe: /queue/moodew'
+        o.subscribe('moodew') {|obj| obj}.should == 'subscribe: /queue/moodew'
     end
 end
 

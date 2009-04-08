@@ -24,20 +24,18 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
     # Place the request on the queue
     def save(request)
         begin
-	    # FIX ME - check for instance type. Assuming storeconfig.
-
-	    # host = request.instance.to_host
-            # client.send("storeconfig", to_message(host))
-            # client.send("storeconfig", to_message(request.instance))
-            msg = Marshal.dump(request.instance.transportable)
-            client.send("storeconfig",msg)
+            client.send(queue, to_message(request.instance))
         rescue => detail
             raise Puppet::Error, "Could not write %s to queue: %s\nInstance::%s\n \n stack: %s" % [request.key, detail,request.instance.to_s,caller(5)]
         end
     end
 
+    def self.queue
+        indirection_name
+    end
+
     def queue
-        self.class.indirection_name
+        self.class.queue
     end
 
     # Returns the singleton queue client object.
@@ -46,28 +44,27 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
     end
 
     # Formats the model instance associated with _request_ appropriately for message delivery.
-    # Uses YAML serialization.
+    # Uses Marshal serialization.
     def to_message(obj)
-        Marshal.dump(obj)
+        Marshal.dump(obj.respond_to?(:transportable) ? obj.transportable : obj)
     end
 
     # converts the _message_ from deserialized format to an actual model instance.
-    def from_message(message)
-        # YAML.load(message)
-        Marshal.restore(message.body)
+    def self.from_message(message)
+        Marshal.restore(message)
     end
 
     # Provides queue subscription functionality; for a given indirection, use this method on the terminus
     # to subscribe to the indirection-specific queue.  Your _block_ will be executed per new indirection
     # model received from the queue, with _obj_ being the model instance.
-    def subscribe
-        client.subscribe('storeconfig') do |msg|
+    def self.subscribe
+        client.subscribe(queue) do |msg|
             begin
                 yield(from_message(msg))
             rescue => detail
                 # really, this should log the exception rather than raise it all the way up the stack;
                 # we don't want exceptions resulting from a single message bringing down a listener
-                raise Puppet::Error, "Error occured with subscription to queue %s for indirection %s: %s" % [queue, self.class.indirection_name, detail]
+                raise Puppet::Error, "Error occured with subscription to queue %s for indirection %s: %s" % [queue, indirection_name, detail]
             end
         end
     end

@@ -17,11 +17,11 @@ class Puppet::Util::Queue::Stomp < Stomp::Client
     end
 
     def subscribe(target)
-        super(stompify_target(target))
+        super(stompify_target(target)) {|stomp_message| yield(stomp_message.body)}
     end
 
     def stompify_target(target)
-        '/queue/' + target
+        '/queue/' + target.to_s
     end
 
     Puppet::Util::Queue.register_queue_type(self, :stomp)
