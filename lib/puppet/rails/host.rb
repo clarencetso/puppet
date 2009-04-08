@@ -175,6 +175,75 @@ class Puppet::Rails::Host < ActiveRecord::Base
             hash
         end
 
+        resources = nil
+        seconds = Benchmark.realtime {
+            resources = remove_unneeded_resources(compiled, existing)
+        }
+        Puppet.debug("Resource removal took %0.2f seconds" % seconds)
+
+        # Now for all resources in the catalog but not in the db, we're pretty easy.
+        additions = nil
+        seconds = Benchmark.realtime {
+            additions = perform_resource_merger(compiled, resources)
+        }
+        Puppet.debug("Resource merger took %0.2f seconds" % seconds)
+
+        seconds = Benchmark.realtime {
+            additions.each do |add|
+                build_rails_resource_from_parser_resource(resource)
+            end
+        }
+        Puppet.debug("Resource addition took %0.2f seconds" % seconds)
+    end
+
+    def add_new_resources(additions)
+        additions.each do |resource|
+            Puppet::Rails::Resource.from_parser_resource(self, resource)
+        end
+    end
+
+    # Turn a parser resource into a Rails resource.  
+    def build_rails_resource_from_parser_resource(resource)
+        args = Puppet::Rails::Resource.rails_resource_initial_args(resource)
+
+        db_resource = self.resources.build(args)
+
+        # Our file= method does the name to id conversion.
+        db_resource.file = resource.file
+
+        resource.eachparam do |param|
+            Puppet::Rails::ParamValue.from_parser_param(param).each do |value_hash|
+                db_resource.param_values.build(value_hash)
+            end
+        end
+
+        resource.tags.each { |tag| db_resource.add_resource_tag(tag) }
+
+        return db_resource
+    end
+
+
+    def perform_resource_merger(compiled, resources)
+        # Now for all resources in the catalog but not in the db, we're pretty easy.
+        times = Hash.new(0)
+        additions = []
+        compiled.each do |ref, resource|
+            if db_resource = resources[ref]
+                db_resource.merge_parser_resource(resource).each do |name, time|
+                    times[name] += time
+                end
+            else
+                additions << resource
+            end
+        end
+        times.each do |name, time|
+            Puppet.debug("Resource merger(%s) took %0.2f seconds" % [name, time])
+        end
+
+        return additions
+    end
+
+    def remove_unneeded_resources(compiled, existing)
         deletions = []
         resources = {}
         existing.each do |id, resource|
@@ -195,19 +264,11 @@ class Puppet::Rails::Host < ActiveRecord::Base
 
             resources[resource.ref] = resource
         end
-
         # We need to use 'destroy' here, not 'delete', so that all
         # dependent objects get removed, too.
         Puppet::Rails::Resource.destroy(*deletions) unless deletions.empty?
 
-        # Now for all resources in the catalog but not in the db, we're pretty easy.
-        compiled.each do |ref, resource|
-            if db_resource = resources[ref]
-                db_resource.merge_parser_resource(resource)
-            else
-                self.resources << Puppet::Rails::Resource.from_parser_resource(resource)
-            end
-        end
+        return resources
     end
 
     def find_resources_parameters(resources)
