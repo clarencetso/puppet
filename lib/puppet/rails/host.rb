@@ -56,10 +56,10 @@ class Puppet::Rails::Host < ActiveRecord::Base
             end
 
             # Store the facts into the database.
-            host.setfacts node.parameters
+            host.merge_facts(node.parameters)
 
             seconds = Benchmark.realtime {
-                host.setresources(resources)
+                host.merge_resources(resources)
             }
             Puppet.debug("Handled resources in %0.2f seconds" % seconds)
 
@@ -94,52 +94,60 @@ class Puppet::Rails::Host < ActiveRecord::Base
     end
     
 
-    def setfacts(facts)
-        facts = facts.dup
-        
-        ar_hash_merge(get_facts_hash(), facts, 
-                      :create => Proc.new { |name, values|
-                          fact_name = Puppet::Rails::FactName.find_or_create_by_name(name)
-                          values = [values] unless values.is_a?(Array)
-                          values.each do |value|
-                              fact_values.build(:value => value,
-                                                :fact_name => fact_name)
-                          end
-                      }, :delete => Proc.new { |values|
-                          values.each { |value| self.fact_values.delete(value) }
-                      }, :modify => Proc.new { |db, mem|
-                          mem = [mem].flatten
-                          fact_name = db[0].fact_name
-                          db_values = db.collect { |fact_value| fact_value.value }
-                          (db_values - (db_values & mem)).each do |value|
-                              db.find_all { |fact_value| 
-                                  fact_value.value == value 
-                              }.each { |fact_value|
-                                  fact_values.delete(fact_value)
-                              }
-                          end
-                          (mem - (db_values & mem)).each do |value|
-                              fact_values.build(:value => value, 
-                                                :fact_name => fact_name)
-                          end
-                      })
+    # This is *very* similar to the merge_parameters method
+    # of Puppet::Rails::Resource.
+    def merge_facts(facts)
+        db_facts = {}
+
+        deletions = []
+        self.fact_values.find(:all, :include => :fact_name).each do |value|
+            deletions << value['id'] and next unless facts.include?(value['name'])
+            # Now store them for later testing.
+            db_facts[value['name']] ||= []
+            db_facts[value['name']] << value
+        end
+
+        # Now get rid of any parameters whose value list is different.
+        # This might be extra work in cases where an array has added or lost
+        # a single value, but in the most common case (a single value has changed)
+        # this makes sense.
+        db_facts.each do |name, value_hashes|
+            values = value_hashes.collect { |v| v['value'] }
+
+            unless values == facts[name]
+                value_hashes.each { |v| deletions << v['id'] }
+            end
+        end
+
+        # Perform our deletions.
+        Puppet::Rails::FactValue.delete(deletions) unless deletions.empty?
+
+        # Lastly, add any new parameters.
+        facts.each do |name, value|
+            next if db_facts.include?(name)
+            values = value.is_a?(Array) ? value : [value]
+
+            values.each do |v|
+                fact_values.build(:value => v, :fact_name => Puppet::Rails::FactName.find_or_create_by_name(name))
+            end
+        end
     end
 
     # Set our resources.
-    def setresources(list)
-        resource_by_id = nil
+    def merge_resources(list)
+        resources_by_id = nil
         seconds = Benchmark.realtime {
-            resource_by_id = find_resources()
+            resources_by_id = find_resources()
         }
         Puppet.debug("Searched for resources in %0.2f seconds" % seconds)
 
         seconds = Benchmark.realtime {
-            find_resources_parameters_tags(resource_by_id)
+            find_resources_parameters_tags(resources_by_id)
         } if id
         Puppet.debug("Searched for resource params and tags in %0.2f seconds" % seconds)
 
         seconds = Benchmark.realtime {
-            compare_to_catalog(resource_by_id, list)
+            compare_to_catalog(resources_by_id, list)
         }
         Puppet.debug("Resource comparison took %0.2f seconds" % seconds)
     end
@@ -161,37 +169,44 @@ class Puppet::Rails::Host < ActiveRecord::Base
         find_resources_tags(resources)
     end
 
-    # it seems that it can happen (see bug #2010) some resources are duplicated in the
-    # database (ie logically corrupted database), in which case we remove the extraneous
-    # entries.
     def compare_to_catalog(existing, list)
-        extra_db_resources = []
-        resources = existing.inject({}) do |hash, res|
-            resource = res[1]
-            if hash.include?(resource.ref)
-                extra_db_resources << hash[resource.ref]
-            end
-            hash[resource.ref] = resource
-            hash
-        end
-
         compiled = list.inject({}) do |hash, resource|
             hash[resource.ref] = resource
             hash
         end
 
-        ar_hash_merge(resources, compiled,
-                      :create => Proc.new { |ref, resource|
-                          resource.to_rails(self)
-                      }, :delete => Proc.new { |resource|
-                          self.resources.delete(resource)
-                      }, :modify => Proc.new { |db, mem|
-                          mem.modify_rails(db)
-                      })
+        deletions = []
+        resources = {}
+        existing.each do |id, resource|
+            # it seems that it can happen (see bug #2010) some resources are duplicated in the
+            # database (ie logically corrupted database), in which case we remove the extraneous
+            # entries.
+            if resources.include?(resource.ref)
+                deletions << id
+                next
+            end
 
-        # fix-up extraneous resources
-        extra_db_resources.each do |resource|
-            self.resources.delete(resource)
+            # If the resource is in the db but not in the catalog, mark it
+            # for removal.
+            unless compiled.include?(resource.ref)
+                deletions << id
+                next
+            end
+
+            resources[resource.ref] = resource
+        end
+
+        # We need to use 'destroy' here, not 'delete', so that all
+        # dependent objects get removed, too.
+        Puppet::Rails::Resource.destroy(*deletions) unless deletions.empty?
+
+        # Now for all resources in the catalog but not in the db, we're pretty easy.
+        compiled.each do |ref, resource|
+            if db_resource = resources[ref]
+                db_resource.merge_parser_resource(resource)
+            else
+                self.resources << Puppet::Rails::Resource.from_parser_resource(resource)
+            end
         end
     end
 
