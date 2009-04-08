@@ -3,6 +3,7 @@
 
 require 'puppet/node'
 require 'puppet/node/catalog'
+require 'puppet/node/store_config'
 require 'puppet/util/errors'
 
 # Maintain a graph of scopes, along with a bunch of data

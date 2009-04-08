@@ -414,7 +414,7 @@ class Puppet::Node::Catalog < Puppet::PGraph
 
     # Turn our parser catalog into a transportable catalog.
     def to_transportable
-        to_catalog :to_transobject
+         to_catalog :to_transobject
     end
 
     # Produce the graph files if requested.

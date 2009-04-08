@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+# == Synopsis 
+#
+# Catch serialized objects queued by puppetmasterd and save them to
+# the database that puppetmasterd uses.
+#
+# = Usage
+#
+#   puppetqd  
+#
+# = Description
+#
+# = Author
+#
+#  Steve McIntosh with lots of help from friends. 
+#
+# = Copyright
+#
+# Copyright (c) 2008 Reductive Labs, LLC
+# Licensed under the GNU Public License
+
+# Do an initial trap, so that cancels don't get a stack trace.
+trap(:INT) do
+    $stderr.puts "Cancelling startup"
+    exit(0)
+end
+
+require 'puppet'
+require 'puppet/indirector/store_config/queue'
+require 'puppet/node/store_config'
+require 'puppet/node/catalog'
+require 'puppet/rails/host'
+require 'rubygems' 
+require 'activerecord'
+require 'stomp' 
+# Puppet::Node::StoreConfig.terminus_class = :active_record
+# Puppet::Node::StoreConfig::Queue.subscribe do |obj|
+    # and the storeconfig object is indirected to use :active_record,
+    # so a simple save() should do the trick
+#    obj.save()
+# end
+# fix me
+ActiveRecord::Base.verify_active_connections!
+dbargs = {:adapter => 'sqlite3', :dbfile => '/var/lib/puppet/storeconfigs.sqlite' }
+begin
+  ActiveRecord::Base.establish_connection(dbargs)
+rescue => detail
+  puts detail.backtrace
+  exit
+end
+
+# username, password, host, port 
+#c = Stomp::Client.open "brianm", "s3kr3t", "localhost", 61613 
+c = Stomp::Client.open "stomp://localhost:61613" 
+# block will be called for each message received from the destination 
+c.subscribe "/queue/storeconfig" do |message| 
+    catalog = Marshal.restore(message.body)
+    puts "recieved: " + catalog.to_s
+#    puts "received: #{host.name} on #{message.headers['destination']}" 
+#   host.save
+end 
+# wait (forever) for delivery 
+while true
+  sleep 6000 # aka one second
+end
+gets 
+# done! 
+c.close 
