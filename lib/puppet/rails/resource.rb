@@ -17,11 +17,6 @@ class Puppet::Rails::Resource < ActiveRecord::Base
     belongs_to :source_file
     belongs_to :host
 
-    @tags = {}
-    def self.tags
-        @tags
-    end
-
     # Determine the basic details on the resource.
     def self.rails_resource_initial_args(resource)
         return [:type, :title, :line, :exported].inject({}) do |hash, param|
@@ -35,9 +30,7 @@ class Puppet::Rails::Resource < ActiveRecord::Base
     end
 
     def add_resource_tag(tag)
-        unless pt = self.class.tags[tag]
-            pt = self.class.tags[tag] = Puppet::Rails::PuppetTag.find_or_create_by_name(tag, :include => :puppet_tag)
-        end
+        pt = Puppet::Rails::PuppetTag.find_or_create_by_name(tag)
         resource_tags.build(:puppet_tag => pt)
     end
 
@@ -110,7 +103,8 @@ class Puppet::Rails::Resource < ActiveRecord::Base
         db_params = {}
 
         deletions = []
-        Puppet::Rails::ParamValue.find_all_params_from_resource(self).each do |value|
+        #Puppet::Rails::ParamValue.find_all_params_from_resource(self).each do |value|
+        @params_hash.each do |value|
             # First remove any parameters our catalog resource doesn't have at all.
             deletions << value['id'] and next unless catalog_params.include?(value['name'])
 
@@ -149,13 +143,15 @@ class Puppet::Rails::Resource < ActiveRecord::Base
     def merge_tags(resource)
         in_db = []
         deletions = []
-        Puppet::Rails::ResourceTag.find_all_tags_from_resource(self).each do |tag|
-            deletions << tag['id'] and next unless resource.tags.include?(tag['name'])
+        resource_tags = resource.tags
+        #Puppet::Rails::ResourceTag.find_all_tags_from_resource(self).each do |tag|
+        @tags_hash.each do |tag|
+            deletions << tag['id'] and next unless resource_tags.include?(tag['name'])
             in_db << tag['name']
         end
         Puppet::Rails::ResourceTag.delete(deletions) unless deletions.empty?
 
-        (resource.tags - in_db).each do |tag|
+        (resource_tags - in_db).each do |tag|
             add_resource_tag(tag)
         end
     end

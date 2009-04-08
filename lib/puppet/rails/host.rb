@@ -65,7 +65,10 @@ class Puppet::Rails::Host < ActiveRecord::Base
 
             host.last_compile = Time.now
 
-            host.save
+            seconds = Benchmark.realtime {
+                host.save
+            }
+            Puppet.debug("Saved host in %0.2f seconds" % seconds)
         end
 
         return host
@@ -189,7 +192,7 @@ class Puppet::Rails::Host < ActiveRecord::Base
         Puppet.debug("Resource merger took %0.2f seconds" % seconds)
 
         seconds = Benchmark.realtime {
-            additions.each do |add|
+            additions.each do |resource|
                 build_rails_resource_from_parser_resource(resource)
             end
         }
@@ -224,6 +227,8 @@ class Puppet::Rails::Host < ActiveRecord::Base
 
 
     def perform_resource_merger(compiled, resources)
+        return compiled.values if resources.empty?
+
         # Now for all resources in the catalog but not in the db, we're pretty easy.
         times = Hash.new(0)
         additions = []
