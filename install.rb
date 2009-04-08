@@ -93,8 +93,8 @@ def do_libs(libs, strip = 'lib/')
     olf = File.join(InstallOptions.site_dir, lf.gsub(/#{strip}/, ''))
     op = File.dirname(olf)
     File.makedirs(op, true)
-    File.chmod(0644, op)
-    File.install(lf, olf, 0755, true)
+    File.chmod(0755, op)
+    File.install(lf, olf, 0644, true)
   end
 end
 
