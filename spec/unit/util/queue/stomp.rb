@@ -4,12 +4,10 @@ require File.dirname(__FILE__) + '/../../../spec_helper'
 require 'puppet/util/queue'
 
 
-def Puppet.[](*any)
-    'faux_queue_source'
-end
 
 describe Puppet::Util::Queue do
     it 'should load :stomp client appropriately' do
+        Puppet.settings.stubs(:value).returns 'faux_queue_source'
         Puppet::Util::Queue.queue_type_to_class(:stomp).name.should == 'Puppet::Util::Queue::Stomp'
     end
 end
@@ -31,6 +29,10 @@ describe 'Puppet::Util::Queue::Stomp' do
                 self.queue_source = s
             end
         end
+    end
+
+    before :each do
+        Puppet.settings.stubs(:value).returns 'faux_queue_source'
     end
 
     it 'should be registered with Puppet::Util::Queue as :stomp type' do
