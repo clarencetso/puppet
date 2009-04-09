@@ -63,10 +63,10 @@ describe Puppet::Indirector::Queue do
         @store.save(@request)
     end
 
-    it 'should use transportable method prior to marshalling if one exists within render()' do
-        @store.render(@subject).should == Marshal.dump(@subject)
+    it 'should use transportable method prior to YAML serialization if one exists within render()' do
+        @store.render(@subject).should == YAML.dump(@subject)
         @subject.stubs(:transportable).returns('as string')
-        @store.render(@subject).should == Marshal.dump('as string')
+        @store.render(@subject).should == YAML.dump('as string')
     end
 
     it 'should save and restore with the appropriate queue, and handle subscribe block' do

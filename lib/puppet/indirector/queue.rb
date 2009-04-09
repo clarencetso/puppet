@@ -1,5 +1,6 @@
 require 'puppet/indirector/terminus'
 require 'puppet/util/queue'
+require 'yaml'
 
 # Implements the <tt>:queue</tt> abstract indirector terminus type, for storing
 # model instances to a message queue, presumably for the purpose of out-of-process
@@ -44,14 +45,14 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
     end
 
     # Formats the model instance associated with _request_ appropriately for message delivery.
-    # Uses Marshal serialization.
+    # Uses YAML serialization.
     def render(obj)
-        Marshal.dump(obj.respond_to?(:transportable) ? obj.transportable : obj)
+        YAML::dump(obj.respond_to?(:transportable) ? obj.transportable : obj)
     end
 
     # converts the _message_ from deserialized format to an actual model instance.
     def self.intern(message)
-        Marshal.restore(message)
+        YAML::load(message)
     end
 
     # Provides queue subscription functionality; for a given indirection, use this method on the terminus
