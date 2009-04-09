@@ -118,7 +118,7 @@ class Puppet::Rails::Resource < ActiveRecord::Base
         db_params.each do |name, value_hashes|
             values = value_hashes.collect { |v| v['value'] }
 
-            unless values == catalog_params[name].value
+            unless value_compare(catalog_params[name].value, values)
                 value_hashes.each { |v| deletions << v['id'] }
             end
         end
@@ -132,7 +132,7 @@ class Puppet::Rails::Resource < ActiveRecord::Base
             values = param.value.is_a?(Array) ? param.value : [param.value]
 
             values.each do |v|
-                param_values.build(:value => v, :line => param.line, :param_name => Puppet::Rails::ParamName.accumulate_by_name(name))
+                param_values.build(:value => serialize_value(v), :line => param.line, :param_name => Puppet::Rails::ParamName.accumulate_by_name(name))
             end
         end
     end
@@ -153,12 +153,10 @@ class Puppet::Rails::Resource < ActiveRecord::Base
         end
     end
 
-    def compare(v,db_value)
-        if (v.is_a?(Puppet::Parser::Resource::Reference))
-            return v.to_s == db_value.to_s
-        else
-            return v == db_value
-        end
+    def value_compare(v,db_value)
+        v = [v] unless v.is_a?(Array)
+
+        v == db_value
     end
 
     def name
