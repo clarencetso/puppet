@@ -10,6 +10,10 @@ class Puppet::ResourceReference
     attr_reader :type
     attr_accessor :title, :catalog
 
+    def ==(other)
+        other.respond_to?(:title) and self.type == other.type and self.title == other.title
+    end
+
     def initialize(type, title)
         # This will set @type if it looks like a resource reference.
         self.title = title

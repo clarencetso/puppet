@@ -46,6 +46,16 @@ describe Puppet::ResourceReference do
         ref.type.should == "Foo::Bar"
         ref.title.should =="baz[yay]"
     end
+
+    it "should consider another reference to be equal if their types and titles are equal" do
+        one = Puppet::ResourceReference.new "file", "/foo"
+        two = Puppet::ResourceReference.new "file", "/foo"
+
+        one.catalog = "foo"
+        two.catalog = "bar"
+
+        one.should == two
+    end
 end
 
 describe Puppet::ResourceReference, "when resolving resources without a catalog" do
