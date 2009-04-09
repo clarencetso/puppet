@@ -26,9 +26,8 @@ trap(:INT) do
 end
 
 require 'puppet'
-require 'puppet/indirector/store_config/queue'
-require 'puppet/node/store_config'
 require 'puppet/node/catalog'
+require 'puppet/indirector/catalog/queue'
 require 'puppet/rails/host'
 require 'rubygems' 
 require 'activerecord'
@@ -48,6 +47,31 @@ rescue => detail
   puts detail.backtrace
   exit
 end
+
+# Here's how it ought to be done, according to Ethan Rowe:
+# Note that the configuration information for the stomp client should be coming
+# from config files or the command line options according to where the Puppet::Util::Queue::Stomp
+# wrapper class looks for such things.
+# It looks to Puppet[:queue_source] for its setting.  If that fails to work due to having nothing
+# set up to make :queue_source a real setting in the Puppet module, please track it down so that it
+# is in fact a valid Puppet setting that can be set in the configuration files.
+Puppet::Node::Catalog.terminus_class = :active_record
+Puppet::Node::Catalog::Queue.subscribe do |catalog|
+    # see Puppet::Queue::Indirector's to_message and from_message to see
+    # what you're getting here; if catalog supports "transportable", then
+    # the object you receive here will be restored from that; you may need
+    # a subsequent tranform to turn it back to a Puppet::Node::Catalog.
+    # But, if it's marshal-able by default and doesn't have a transportable
+    # method, then the catalog instance should already be an actual Puppet::Node::Catalog
+    # instance.
+    # Once you have a Puppet::Node::Catalog instance, calling save() on it should suffice
+    # to put it through to the database via its active_record indirector (which is determined
+    # by the terminus_class = :active_record setting above)
+    
+    # should we perhaps log the save attempt here?  Just a thought.
+    catalog.save
+end
+# get the above working and you're done; everything else below can go away.
 
 # username, password, host, port 
 #c = Stomp::Client.open "brianm", "s3kr3t", "localhost", 61613 

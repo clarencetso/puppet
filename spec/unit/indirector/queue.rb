@@ -60,7 +60,7 @@ describe Puppet::Indirector::Queue do
         @store.save(stub('request_two', :key => 'too', :instance => @subject_two))
 
         received = []
-        @store.subscribe do |obj|
+        @store_class.subscribe do |obj|
             received.push(obj)
         end
 
