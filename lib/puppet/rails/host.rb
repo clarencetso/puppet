@@ -72,7 +72,11 @@ class Puppet::Rails::Host < ActiveRecord::Base
                     host.save
                 }
             end
+
         end
+
+        # This only runs if time debugging is enabled.
+        write_benchmarks
 
         return host
     end
