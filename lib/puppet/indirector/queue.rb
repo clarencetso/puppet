@@ -24,7 +24,7 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
     # Place the request on the queue
     def save(request)
         begin
-            client.send(queue, to_message(request.instance))
+            client.send_message(queue, render(request.instance))
         rescue => detail
             raise Puppet::Error, "Could not write %s to queue: %s\nInstance::%s\n \n stack: %s" % [request.key, detail,request.instance.to_s,caller(5)]
         end
@@ -45,12 +45,12 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
 
     # Formats the model instance associated with _request_ appropriately for message delivery.
     # Uses Marshal serialization.
-    def to_message(obj)
+    def render(obj)
         Marshal.dump(obj.respond_to?(:transportable) ? obj.transportable : obj)
     end
 
     # converts the _message_ from deserialized format to an actual model instance.
-    def self.from_message(message)
+    def self.intern(message)
         Marshal.restore(message)
     end
 
@@ -60,7 +60,7 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
     def self.subscribe
         client.subscribe(queue) do |msg|
             begin
-                yield(from_message(msg))
+                yield(self.intern(msg))
             rescue => detail
                 # really, this should log the exception rather than raise it all the way up the stack;
                 # we don't want exceptions resulting from a single message bringing down a listener

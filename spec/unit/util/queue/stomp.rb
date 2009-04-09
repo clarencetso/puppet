@@ -34,13 +34,19 @@ describe 'Puppet::Util::Queue::Stomp' do
         Puppet.settings.stubs(:value).returns 'faux_queue_source'
     end
 
+    it 'should make send function like core Ruby instead of stomp client send method' do
+        o = Puppet::Util::Queue::Stomp.new
+        o.expects(:pants).with('foo').once
+        o.send(:pants, 'foo')
+    end
+
     it 'should be registered with Puppet::Util::Queue as :stomp type' do
         Puppet::Util::Queue.queue_type_to_class(:stomp).should == Puppet::Util::Queue::Stomp
     end
 
     it 'should initialize using Puppet[:queue_source] for configuration' do
         o = Puppet::Util::Queue::Stomp.new
-        o.queue_source.should == 'faux_queue_source'
+        o.stomp_client.queue_source.should == 'faux_queue_source'
     end
 
     it 'should transform the simple queue name to "/queue/<queue_name>"' do
@@ -49,7 +55,7 @@ describe 'Puppet::Util::Queue::Stomp' do
 
     it 'should transform the queue name properly and pass along to superclass for send and subscribe' do
         o = Puppet::Util::Queue::Stomp.new
-        o.send('fooqueue', 'Smite!').should == 'To /queue/fooqueue: Smite!'
+        o.send_message('fooqueue', 'Smite!').should == 'To /queue/fooqueue: Smite!'
         o.subscribe('moodew') {|obj| obj}.should == 'subscribe: /queue/moodew'
     end
 end

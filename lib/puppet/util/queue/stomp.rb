@@ -7,17 +7,19 @@ require 'stomp'
 # Looks to <tt>Puppet[:queue_source]</tt> for the sole argument to the underlying Stomp::Client constructor;
 # consequently, for this client to work, <tt>Puppet[:queue_source]</tt> must use the Stomp::Client URL-like
 # syntax for identifying the Stomp message broker: <em>login:pass@host.port</em>
-class Puppet::Util::Queue::Stomp < Stomp::Client
+class Puppet::Util::Queue::Stomp
+    attr_accessor :stomp_client
+
     def initialize
-        super( Puppet[:queue_source] )
+        self.stomp_client = Stomp::Client.new( Puppet[:queue_source] )
     end
 
-    def send(target, msg)
-        super(stompify_target(target), msg)
+    def send_message(target, msg)
+        stomp_client.send(stompify_target(target), msg)
     end
 
     def subscribe(target)
-        super(stompify_target(target)) {|stomp_message| yield(stomp_message.body)}
+        stomp_client.subscribe(stompify_target(target)) {|stomp_message| yield(stomp_message.body)}
     end
 
     def stompify_target(target)

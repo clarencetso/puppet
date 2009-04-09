@@ -4,6 +4,10 @@ require File.dirname(__FILE__) + '/../../spec_helper'
 require 'puppet/indirector/queue'
 
 class Puppet::Indirector::Queue::TestClient
+    def self.reset
+        @queues = {}
+    end
+
     def self.queues
         @queues ||= {}
     end
@@ -15,7 +19,7 @@ class Puppet::Indirector::Queue::TestClient
         end
     end
 
-    def send(queue, message)
+    def send_message(queue, message)
         stack = self.class.queues[queue] ||= []
         stack.push(message)
         queue
@@ -44,6 +48,7 @@ describe Puppet::Indirector::Queue do
         Puppet.settings.stubs(:value).returns("bogus setting data")
         Puppet.settings.stubs(:value).with(:queue_client).returns(:test_client)
         Puppet::Util::Queue.stubs(:queue_type_to_class).with(:test_client).returns(Puppet::Indirector::Queue::TestClient)
+        Puppet::Indirector::Queue::TestClient.reset
 
         @request = stub 'request', :key => :me, :instance => @subject
     end
@@ -51,6 +56,17 @@ describe Puppet::Indirector::Queue do
     it 'should use the correct client type and queue' do
         @store.queue.should == :my_queue
         @store.client.should be_an_instance_of(Puppet::Indirector::Queue::TestClient)
+    end
+
+    it 'should use render() to convert object to message' do
+        @store.expects(:render).with(@subject).once
+        @store.save(@request)
+    end
+
+    it 'should use transportable method prior to marshalling if one exists within render()' do
+        @store.render(@subject).should == Marshal.dump(@subject)
+        @subject.stubs(:transportable).returns('as string')
+        @store.render(@subject).should == Marshal.dump('as string')
     end
 
     it 'should save and restore with the appropriate queue, and handle subscribe block' do
@@ -66,6 +82,12 @@ describe Puppet::Indirector::Queue do
 
         received[0].name.should == @subject.name
         received[1].name.should == @subject_two.name
+    end
+
+    it 'should use intern() to convert message to object with subscribe()' do
+        @store.save(@request)
+        @store_class.expects(:intern).with(@store.render(@subject)).once
+        @store_class.subscribe {|o| o }
     end
 end
 
