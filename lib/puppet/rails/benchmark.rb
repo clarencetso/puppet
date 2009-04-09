@@ -6,7 +6,9 @@ module Puppet::Rails::Benchmark
     end
 
     def sometimes_benchmark(message)
-        yield and return unless Puppet::Rails::TIME_DEBUG
+        unless Puppet::Rails::TIME_DEBUG
+            return yield
+        end
 
         railsmark(message) { yield }
     end
@@ -16,7 +18,9 @@ module Puppet::Rails::Benchmark
     #   These are always low-level debugging so we only
     # print them if time_debug is enabled.
     def accumulate_benchmark(message, label)
-        yield and return unless Puppet::Rails::TIME_DEBUG
+        unless Puppet::Rails::TIME_DEBUG
+            return yield
+        end
 
         $accumulated_benchmarks ||= {}
         $accumulated_benchmarks[message] ||= Hash.new(0)
@@ -28,7 +32,6 @@ module Puppet::Rails::Benchmark
         return unless Puppet::Rails::TIME_DEBUG
 
         if $accumulated_benchmarks.empty? or $accumulated_benchmarks[message].empty?
-            Puppet.debug(message + " in %0.2f seconds" % 0)
             return
         end
 

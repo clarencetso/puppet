@@ -273,7 +273,7 @@ class Puppet::Rails::Host < ActiveRecord::Base
         end
         # We need to use 'destroy' here, not 'delete', so that all
         # dependent objects get removed, too.
-        Puppet::Rails::Resource.destroy(*deletions) unless deletions.empty?
+        Puppet::Rails::Resource.destroy(deletions) unless deletions.empty?
 
         return resources
     end
