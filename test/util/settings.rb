@@ -464,48 +464,6 @@ yay = /a/path
         assert_equal("644", file.mode, "Did not pass on mode")
     end
 
-    def test_arghandling
-        c = mkconfig
-
-        assert_nothing_raised {
-            @config.setdefaults("testing",
-                :onboolean => [true, "An on bool"],
-                :offboolean => [false, "An off bool"],
-                :string => ["a string", "A string arg"],
-                :file => ["/path/to/file", "A file arg"]
-            )
-        }
-
-        data = {
-            :onboolean => [true, false],
-            :offboolean => [true, false],
-            :string => ["one string", "another string"],
-            :file => %w{/a/file /another/file}
-        }
-        data.each { |param, values|
-            values.each { |val|
-                opt = nil
-                arg = nil
-                if @config.boolean?(param)
-                    if val
-                        opt = "--%s" % param
-                    else
-                        opt = "--no-%s" % param
-                    end
-                else
-                    opt = "--%s" % param
-                    arg = val
-                end
-
-                assert_nothing_raised("Could not handle arg %s with value %s" %
-                    [opt, val]) {
-
-                    @config.handlearg(opt, arg)
-                }
-            }
-        }
-    end
-
     def test_addargs
         @config.setdefaults("testing",
                             :onboolean => [true, "An on bool"],
