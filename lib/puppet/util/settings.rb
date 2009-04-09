@@ -138,7 +138,7 @@ class Puppet::Util::Settings
     end
 
     # Handle a command-line argument.
-    def handlearg(opt, value)
+    def handlearg(opt, value = nil)
         @cache.clear
         value = munge_value(value) if value
         str = opt.sub(/^--/,'')
@@ -150,7 +150,7 @@ class Puppet::Util::Settings
         end
         str = str.intern
 
-        if value == ""
+        if value == "" or value.nil?
             value = bool
         end
 
