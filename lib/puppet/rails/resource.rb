@@ -76,9 +76,9 @@ class Puppet::Rails::Resource < ActiveRecord::Base
 
     # Make sure this resource is equivalent to the provided Parser resource.
     def merge_parser_resource(resource)
-        accumulate_benchmark("Resource merger", :attributes) { merge_attributes(resource) }
-        accumulate_benchmark("Resource merger", :parameters) { merge_parameters(resource) }
-        accumulate_benchmark("Resource merger", :tags) { merge_tags(resource) }
+        accumulate_benchmark("Individual resource merger", :attributes) { merge_attributes(resource) }
+        accumulate_benchmark("Individual resource merger", :parameters) { merge_parameters(resource) }
+        accumulate_benchmark("Individual resource merger", :tags) { merge_tags(resource) }
     end
 
     def merge_attributes(resource)
