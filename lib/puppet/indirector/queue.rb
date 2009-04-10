@@ -48,7 +48,7 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
     # Formats the model instance associated with _request_ appropriately for message delivery.
     # Uses YAML serialization.
     def render(obj)
-        YAML::dump(obj.respond_to?(:transportable) ? obj.transportable : obj)
+        YAML::dump(obj)
     end
 
     # converts the _message_ from deserialized format to an actual model instance.
