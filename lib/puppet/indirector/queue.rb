@@ -25,9 +25,10 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
     # Place the request on the queue
     def save(request)
         begin
+            Puppet.info "Queueing catalog for %s" % request.key
             client.send_message(queue, render(request.instance))
         rescue => detail
-            raise Puppet::Error, "Could not write %s to queue: %s\nInstance::%s\n \n stack: %s" % [request.key, detail,request.instance.to_s,caller(5)]
+            raise Puppet::Error, "Could not write %s to queue: %s\nInstance::%s\n client : %s" % [request.key, detail,request.instance.to_s,client.to_s]
         end
     end
 

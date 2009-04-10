@@ -283,7 +283,8 @@ if Puppet[:daemonize]
 end
 
 # Set up default terminus for storeconfig
-Puppet::Node::StoreConfig.terminus_class = :queue
+Puppet::Node::Catalog.cache_class= :queue
+Puppet[:queue_source] = 'stomp:://localhost:61613'
 
 Puppet.notice "Starting Puppet server version %s" % [Puppet.version]
 case Puppet[:servertype]
