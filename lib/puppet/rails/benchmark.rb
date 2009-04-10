@@ -47,7 +47,6 @@ module Puppet::Rails::Benchmark
         $benchmarks[:accumulated][message].each do |label, value|
             Puppet.debug(message + ("(%s)" % label) + (" in %0.2f seconds" % value))
         end
-        $benchmarks[:accumulated].delete(message)
     end
 
     def write_benchmarks
