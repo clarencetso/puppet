@@ -22,6 +22,11 @@ class Puppet::Indirector::Queue < Puppet::Indirector::Terminus
     extend ::Puppet::Util::Queue
     self.queue_type_default = :stomp
 
+    # Queue has no idiomatic "find"
+    def find(request)
+        nil
+    end
+
     # Place the request on the queue
     def save(request)
         begin
