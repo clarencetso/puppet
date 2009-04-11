@@ -215,6 +215,26 @@ describe Puppet::Type do
         it "should delete the name via the namevar from the originally provided parameters" do
             Puppet::Type.type(:file).new(:name => "/foo").original_parameters[:path].should be_nil
         end
+
+        it "should allow a positive timeout value to be set" do
+            Puppet::Type.type(:file).new(:name => "/tmp/foo", :timeout => "20")
+        end
+
+        it "should allow a negative timeout value to be set" do
+            Puppet::Type.type(:file).new(:name => "/tmp/foo", :timeout => "-20")
+        end
+
+        it "should allow a zero timeout value to be set" do
+            Puppet::Type.type(:file).new(:name => "/tmp/foo", :timeout => "0")
+        end
+
+        it "should allow a float timeout value to be set" do
+            Puppet::Type.type(:file).new(:name => "/tmp/foo", :timeout => "1.1")
+        end
+
+        it "should not allow a non-numeric timeout value to be set" do
+            lambda { Puppet::Type.type(:file).new(:name => "/tmp/foo", :timeout => "a") }.should raise_error(Puppet::Error)
+        end
     end
 
     it "should have a class method for converting a hash into a Puppet::Resource instance" do

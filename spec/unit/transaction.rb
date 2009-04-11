@@ -10,7 +10,7 @@ describe Puppet::Transaction do
         @transaction = Puppet::Transaction.new(@catalog)
 
         # Have both a title and name
-        resource = Puppet::Type.type(:sshkey).create :title => "foo", :name => "bar", :type => :dsa, :key => "eh"
+        resource = Puppet::Type.type(:sshkey).new :title => "foo", :name => "bar", :type => :dsa, :key => "eh"
         @catalog.add_resource resource
 
         resource.provider.class.expects(:prefetch).with("bar" => resource)
@@ -79,5 +79,45 @@ describe Puppet::Transaction, " when determining tags" do
     it "should always convert assigned tags to an array" do
         @transaction.tags = "one::two"
         @transaction.tags.should == %w{one::two}
+    end
+end
+
+describe Puppet::Transaction, " when evaluating" do
+    before do
+        @catalog = Puppet::Resource::Catalog.new
+        @transaction = Puppet::Transaction.new(@catalog)
+    end
+
+    it "should have a defalut timeout value of 0" do
+        Puppet::Type.type(:exec).new(:name => "/bin/sleep 1")[:timeout].should == Float(0)
+    end
+
+    it "should timeout with a useful message when the running time of the resource is greater than the 'timeout' parameter" do
+        resource = Puppet::Type.type(:exec).new(:name => "/bin/sleep 3", :timeout => "1")
+        @catalog.add_resource(resource)
+
+        resource.expects(:err)
+        lambda { @transaction.evaluate }.should_not raise_error
+    end
+
+    it "should not timeout when the running time of the resource is less than the 'timeout' parameter" do
+        resource = Puppet::Type.type(:exec).create(:name => "/bin/sleep 3", :timeout => "5")
+        @catalog.add_resource(resource)
+
+        lambda { @transaction.evaluate }.should_not raise_error
+    end
+
+    it "should not timeout when the running time of the resource is equal to 0" do
+        resource = Puppet::Type.type(:exec).create(:name => "/bin/sleep 3", :timeout => "0")
+        @catalog.add_resource(resource)
+
+        lambda { @transaction.evaluate }.should_not raise_error
+    end
+
+    it "should not timeout when the running time of the resource is negative" do
+        resource = Puppet::Type.type(:exec).create(:name => "/bin/sleep 3", :timeout => "-1")
+        @catalog.add_resource(resource)
+
+        lambda { @transaction.evaluate }.should_not raise_error
     end
 end

@@ -53,6 +53,10 @@ describe "Puppet defaults" do
         Puppet.settings[:bindaddress].should == ""
     end
 
+    it "should have a default resource timeout of '0'" do
+        Puppet.settings[:timeout] = "0"
+    end
+
     [:factdest, :pluginpath].each do |setting|
         it "should force the #{setting} to be a directory" do
             Puppet.settings[setting].should =~ /\/$/

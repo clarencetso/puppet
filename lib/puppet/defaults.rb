@@ -83,6 +83,8 @@ module Puppet
             Valid values are ``ansi`` (equivalent to ``true``), ``html`` (mostly
             used during testing with TextMate), and ``false``, which produces
             no color."],
+        :timeout=> [0,
+            "The default timeout for all types, in seconds.  0, the default sets             an infinite timeout."],
         :mkusers => [false,
             "Whether to create the necessary user and group that puppetd will
             run as."],
