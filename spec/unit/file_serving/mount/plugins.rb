@@ -52,19 +52,25 @@ describe Puppet::FileServing::Mount::Plugins, "when searching for files" do
         @mount.search("foo", :node => "mynode")
     end
 
-    it "should return nil if no modules can be found that have plugins" do
-        mod = mock 'module'
-        mod.stubs(:plugins?).returns false
+    it "should return nil if no plugin directories can be found" do
+        mod = Puppet::Module.new("foo")
+        mod.stubs(:paths).returns []
 
         @environment.expects(:modules).returns [mod]
         @mount.search("foo/bar").should be_nil
     end
 
     it "should return the plugin paths for each module that has plugins" do
-        one = stub 'module', :plugins? => true, :plugins => "/one"
-        two = stub 'module', :plugins? => true, :plugins => "/two"
+        modules = []
+        FileTest.stubs(:exist?).returns true
 
-        @environment.expects(:modules).returns [one, two]
-        @mount.search("foo/bar").should == %w{/one /two}
+        2.times do |i|
+            # Use real modules, so it's more of an integration test.
+            modules << Puppet::Module.new("module%s" % i)
+            modules[-1].stubs(:paths).returns(["/a%s" % i, "/b%s" % i])
+        end
+
+        @environment.expects(:modules).returns modules
+        @mount.search("foo/bar").should == %w{/a0/plugins /b0/plugins /a1/plugins /b1/plugins}
     end
 end
