@@ -68,6 +68,17 @@ describe Puppet::Type do
         resource.tags = [:tag1,:tag2]
     end
 
+    it "should have a :timeout metaparam" do
+        Puppet::Type.metaparamclass(:timeout).should equal(Puppet::Type::MetaParamTimeout)
+    end
+
+    it "should default to the value of the :timeout setting, converted to a float, as its timeout value" do
+        Puppet.settings.expects(:value).with(:timeout).returns "5.0"
+        resource = Puppet::Type.type(:mount).new(:name => "foo")
+
+        resource[:timeout].should == 5.0
+    end
+
     describe "when initializing" do
         describe "and passed a TransObject" do
             it "should fail" do

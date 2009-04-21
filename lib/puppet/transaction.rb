@@ -290,14 +290,14 @@ class Transaction
                 end
                 ret = nil
                 seconds = thinmark do
-                begin 
-                    Timeout::timeout(resource[:timeout]) {
-                        ret = eval_resource(resource)
-                    }
-                 rescue(Timeout::Error) 
-                     resource.err("#{resource.to_s} expired at #{resource[:timeout]} seconds.")
-                     @failures[resource] += 1
-                 end
+                    begin 
+                        Timeout::timeout(resource[:timeout]) {
+                            ret = eval_resource(resource)
+                        }
+                    rescue(Timeout::Error) 
+                        resource.err("expired at #{resource[:timeout]} seconds.")
+                        @failures[resource] += 1
+                    end
                 end
 
                 if Puppet[:evaltrace] and @catalog.host_config?

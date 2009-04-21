@@ -1255,14 +1255,15 @@ class Type
     end
 
     newmetaparam(:timeout) do
-        desc "The time that a component is allowed to run prior to being forced to exit. Defaults to '0' (infinite)."
-        defaultto Puppet[:timeout].to_i
+        desc "The time that a component is allowed to run prior to being forced to exit. Defaults to the value of the 'timeout' setting, which defaults to '0' (infinite)."
 
-        munge do |timeout|
+        defaultto { Puppet[:timeout] }
+
+        munge do |val|
             val = val.shift if val.is_a?(Array)
             begin
                 Float(val)
-            rescue
+            rescue => detail
                 raise ArgumentError, "Timeout was not a number: %s" % detail
             end
         end

@@ -140,4 +140,8 @@ describe "Puppet defaults" do
             Puppet.settings[:storeconfigs] = true
         end
     end
+
+    it "should have a :timeout setting defaulting to 0" do
+        Puppet.settings[:timeout].should == 0
+    end
 end
